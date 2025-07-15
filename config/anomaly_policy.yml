@@ -1,0 +1,11 @@
+anomaly_detection:
+  volatility_threshold: 0.25
+  deviation_window: 6
+  anomaly_score_trigger: 0.7
+
+override_protocol:
+  enabled: true
+  min_quorum_percent: 66
+  fallback_to_core_logic: true
+  recursive_depth_limit: 3
+  delay_seconds: 120
