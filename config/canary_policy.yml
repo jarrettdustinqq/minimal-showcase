@@ -1,2 +1,5 @@
 rotation_days: 3
 decoy_ratio: 0.3
+
+target_seconds: 5
+global_max_difficulty: 2e6
