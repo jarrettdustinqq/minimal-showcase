@@ -1,0 +1,2 @@
+oracle_feeds: ["threat-feed-A","threat-feed-B","threat-feed-C"]
+max_weight_delta: 0.25
