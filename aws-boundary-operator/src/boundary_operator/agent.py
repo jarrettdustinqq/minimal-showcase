@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import os
 from pathlib import Path
+from typing import Any
 
 from strands import Agent
 from strands.vended_interventions.hitl import HumanInTheLoop
@@ -28,7 +29,11 @@ Operating rules:
 """
 
 
-def make_agent() -> Agent:
+def make_agent(*, model: Any | None = None, ask: Any = "stdio") -> Agent:
+    """Construct Boundary Operator, allowing deterministic model/approval injection in tests."""
+    kwargs: dict[str, Any] = {}
+    if model is not None:
+        kwargs["model"] = model
     return Agent(
         system_prompt=SYSTEM_PROMPT,
         tools=[
@@ -40,7 +45,7 @@ def make_agent() -> Agent:
         ],
         interventions=[
             HumanInTheLoop(
-                ask="stdio",
+                ask=ask,
                 allowed_tools=[
                     "scan_workspace",
                     "read_text_file",
@@ -51,6 +56,7 @@ def make_agent() -> Agent:
                 and response.strip().lower() == "confirm",
             )
         ],
+        **kwargs,
     )
 
 
