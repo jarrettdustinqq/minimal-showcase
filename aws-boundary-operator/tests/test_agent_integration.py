@@ -53,7 +53,9 @@ class ScriptedToolModel(Model):
             tool_use_id = f"scripted-{self.turn}"
             yield {
                 "contentBlockStart": {
-                    "start": {"name": name, "toolUseId": tool_use_id}
+                    "start": {
+                        "toolUse": {"name": name, "toolUseId": tool_use_id}
+                    }
                 }
             }
             yield {
