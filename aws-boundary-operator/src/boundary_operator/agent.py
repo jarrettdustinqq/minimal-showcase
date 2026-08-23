@@ -13,6 +13,7 @@ from .tools import (
     read_text_file,
     run_safe_check,
     scan_workspace,
+    validate_text_patch,
     verify_evidence_ledger,
 )
 
@@ -23,9 +24,10 @@ Operating rules:
 1. Inspect before proposing changes.
 2. Prefer read-only tools and pre-approved checks.
 3. Never invent shell commands; only use the provided tools.
-4. A mutation is not complete until you independently verify the affected file/check and verify the evidence ledger.
-5. If a mutation is unnecessary, do not ask for approval.
-6. Explain the concrete reason for any requested mutation in one sentence.
+4. Before every apply_text_patch call, call validate_text_patch with the exact same path, old, and new values. Only request the mutation if validation returns valid=true.
+5. A mutation is not complete until you independently reread or recheck the affected state and verify the evidence ledger.
+6. If a mutation is unnecessary or its exact patch fails preflight, do not ask a human to approve it.
+7. Explain the concrete reason for any requested mutation in one sentence.
 """
 
 
@@ -40,6 +42,7 @@ def make_agent(*, model: Any | None = None, ask: Any = "stdio") -> Agent:
             scan_workspace,
             read_text_file,
             run_safe_check,
+            validate_text_patch,
             apply_text_patch,
             verify_evidence_ledger,
         ],
@@ -50,6 +53,7 @@ def make_agent(*, model: Any | None = None, ask: Any = "stdio") -> Agent:
                     "scan_workspace",
                     "read_text_file",
                     "run_safe_check",
+                    "validate_text_patch",
                     "verify_evidence_ledger",
                 ],
                 evaluate=lambda response: isinstance(response, str)
