@@ -23,6 +23,25 @@ def _ledger() -> EvidenceLedger:
     return EvidenceLedger(_root() / ".boundary_operator" / "evidence.jsonl")
 
 
+def _preflight_text_patch(path: str, old: str, new: str) -> tuple[Path, str]:
+    target = _policy().resolve(path)
+    if not target.is_file():
+        raise PolicyViolation(f"target is not a file: {path}")
+    if not old:
+        raise PolicyViolation("old text must be non-empty")
+    if old == new:
+        raise PolicyViolation("replacement would not change state")
+    before = target.read_text(encoding="utf-8")
+    occurrences = before.count(old)
+    if occurrences == 0:
+        raise PolicyViolation("old text was not found; refusing ambiguous patch")
+    if occurrences != 1:
+        raise PolicyViolation(
+            f"old text occurs {occurrences} times; refusing ambiguous patch"
+        )
+    return target, before
+
+
 @tool
 def scan_workspace() -> str:
     """List a bounded summary of files in the authorized workspace. Read-only."""
@@ -72,16 +91,25 @@ def run_safe_check(check: str) -> str:
 
 
 @tool
+def validate_text_patch(path: str, old: str, new: str) -> str:
+    """Preflight an exact text replacement without changing state. Call this with the exact same path, old, and new values before requesting approval for apply_text_patch."""
+    try:
+        _preflight_text_patch(path, old, new)
+    except PolicyViolation as exc:
+        return json.dumps({"valid": False, "path": path, "reason": str(exc)})
+    return json.dumps(
+        {
+            "valid": True,
+            "path": path,
+            "reason": "exact replacement exists once and would change state",
+        }
+    )
+
+
+@tool
 def apply_text_patch(path: str, old: str, new: str) -> str:
-    """Replace one exact text fragment in an authorized workspace file. This mutates state and must require human approval."""
-    target = _policy().resolve(path)
-    if not target.is_file():
-        raise FileNotFoundError(path)
-    before = target.read_text(encoding="utf-8")
-    if old not in before:
-        raise PolicyViolation("old text was not found; refusing ambiguous patch")
-    if before.count(old) != 1:
-        raise PolicyViolation("old text is not unique; refusing ambiguous patch")
+    """Replace one exact text fragment in an authorized workspace file. The exact patch must first pass validate_text_patch; this mutates state and requires human approval."""
+    target, before = _preflight_text_patch(path, old, new)
     after = before.replace(old, new, 1)
     target.write_text(after, encoding="utf-8")
     digest = _ledger().append(
