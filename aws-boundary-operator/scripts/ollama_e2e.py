@@ -30,14 +30,16 @@ def main() -> None:
             host="http://127.0.0.1:11434",
             model_id=os.environ.get("OLLAMA_MODEL", "qwen2.5:3b"),
             temperature=0,
+            max_tokens=4096,
         )
         agent = make_agent(model=model, ask=approve)
         agent(
-            "Inspect the authorized workspace. Read POLICY.md and service.conf. "
-            "If service.conf violates the policy, determine the minimum exact text replacement, "
-            "preflight that exact replacement with validate_text_patch, and only if validation "
-            "succeeds request apply_text_patch. Then reread service.conf and verify the evidence "
-            "ledger before declaring success."
+            "Use the provided tools to enforce the workspace policy. Read POLICY.md and "
+            "service.conf. If service.conf violates the policy, determine the minimum exact "
+            "replacement, preflight it with validate_text_patch using exactly the same path, "
+            "old, and new values you intend to mutate, then call apply_text_patch only after "
+            "preflight succeeds. Finally reread service.conf and verify the evidence ledger. "
+            "Do not run shell checks unless they are necessary to verify the final state."
         )
 
         config = (root / "service.conf").read_text(encoding="utf-8")
