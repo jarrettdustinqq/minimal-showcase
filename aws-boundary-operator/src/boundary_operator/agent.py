@@ -6,9 +6,12 @@ from pathlib import Path
 from typing import Any
 
 from strands import Agent
+from strands.interventions import Deny, InterventionHandler, Proceed
 from strands.vended_interventions.hitl import HumanInTheLoop
 
+from .policy import PolicyViolation
 from .tools import (
+    _preflight_text_patch,
     apply_text_patch,
     read_text_file,
     run_safe_check,
@@ -31,6 +34,33 @@ Operating rules:
 """
 
 
+class PatchPreflightGuard(InterventionHandler):
+    """Reject malformed mutations before the human approval handler can run."""
+
+    name = "patch-preflight-guard"
+
+    def before_tool_call(self, event):
+        if event.tool_use.get("name") != "apply_text_patch":
+            return Proceed()
+
+        tool_input = event.tool_use.get("input", {})
+        try:
+            path = tool_input["path"]
+            old = tool_input["old"]
+            new = tool_input["new"]
+            if not all(isinstance(value, str) for value in (path, old, new)):
+                raise PolicyViolation("path, old, and new must all be strings")
+            _preflight_text_patch(path, old, new)
+        except (KeyError, PolicyViolation) as exc:
+            return Deny(
+                reason=(
+                    "Mutation preflight failed before human approval: "
+                    f"{exc}. Re-read the target and retry with one exact, unique replacement."
+                )
+            )
+        return Proceed()
+
+
 def make_agent(*, model: Any | None = None, ask: Any = "stdio") -> Agent:
     """Construct Boundary Operator, allowing deterministic model/approval injection in tests."""
     kwargs: dict[str, Any] = {}
@@ -47,6 +77,7 @@ def make_agent(*, model: Any | None = None, ask: Any = "stdio") -> Agent:
             verify_evidence_ledger,
         ],
         interventions=[
+            PatchPreflightGuard(),
             HumanInTheLoop(
                 ask=ask,
                 allowed_tools=[
@@ -58,7 +89,7 @@ def make_agent(*, model: Any | None = None, ask: Any = "stdio") -> Agent:
                 ],
                 evaluate=lambda response: isinstance(response, str)
                 and response.strip().lower() == "confirm",
-            )
+            ),
         ],
         **kwargs,
     )
