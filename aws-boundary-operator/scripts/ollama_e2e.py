@@ -29,14 +29,15 @@ def main() -> None:
         model = OllamaModel(
             host="http://127.0.0.1:11434",
             model_id=os.environ.get("OLLAMA_MODEL", "qwen2.5:3b"),
-            params={"temperature": 0},
+            temperature=0,
         )
         agent = make_agent(model=model, ask=approve)
         agent(
             "Inspect the authorized workspace. Read POLICY.md and service.conf. "
-            "If service.conf violates the policy, make only the minimum exact correction "
-            "using the provided mutation tool. Then reread service.conf and verify the "
-            "evidence ledger before declaring success."
+            "If service.conf violates the policy, determine the minimum exact text replacement, "
+            "preflight that exact replacement with validate_text_patch, and only if validation "
+            "succeeds request apply_text_patch. Then reread service.conf and verify the evidence "
+            "ledger before declaring success."
         )
 
         config = (root / "service.conf").read_text(encoding="utf-8")
