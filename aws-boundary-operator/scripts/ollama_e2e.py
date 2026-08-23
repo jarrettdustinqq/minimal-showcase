@@ -34,12 +34,15 @@ def main() -> None:
         )
         agent = make_agent(model=model, ask=approve)
         agent(
-            "Use the provided tools to enforce the workspace policy. Read POLICY.md and "
-            "service.conf. If service.conf violates the policy, determine the minimum exact "
-            "replacement, preflight it with validate_text_patch using exactly the same path, "
-            "old, and new values you intend to mutate, then call apply_text_patch only after "
-            "preflight succeeds. Finally reread service.conf and verify the evidence ledger. "
-            "Do not run shell checks unless they are necessary to verify the final state."
+            "Complete this task through tool calls, not promises about future actions. "
+            "Read POLICY.md and service.conf. If service.conf violates the policy, determine "
+            "the minimum exact replacement and call validate_text_patch with the exact path, "
+            "old, and new values. If validation succeeds, your very next action must be the "
+            "apply_text_patch tool call using those identical arguments: do not narrate, ask "
+            "another question, or end the turn between validation and mutation. After the "
+            "approved mutation, immediately reread service.conf and call "
+            "verify_evidence_ledger. Do not merely state that you will perform any required "
+            "tool call; perform it before ending the task."
         )
 
         config = (root / "service.conf").read_text(encoding="utf-8")
