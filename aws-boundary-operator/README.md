@@ -63,13 +63,15 @@ rm -rf demo_workspace/.boundary_operator
 - Mutation evidence is hash chained and tamper detectable.
 - Production repositories are not imported or modified.
 
-## Tests
+## Validation status
 
-The core policy and ledger tests do not require model credentials:
+GitHub Actions installs the current Strands SDK, compiles the project, constructs the agent/intervention stack, and runs all tests without model credentials. The integration suite also drives the real Strands event loop with a deterministic custom model through multiple read-only tool calls, one `HumanInTheLoop`-gated mutation, a post-change reread, and evidence-ledger verification.
 
 ```bash
 PYTHONPATH=src python -m unittest discover -s tests -v
 ```
+
+This validates the orchestration and safety boundary without pretending that a deterministic test model proves real-model behavior.
 
 ## Pre-existing work disclosure
 
@@ -77,4 +79,4 @@ The **architecture and safety philosophy** are informed by prior private/public 
 
 ## Next evidence gate
 
-This branch earns further build effort only if the first slice demonstrates the complete loop end-to-end under Strands: autonomous read-only investigation -> human-gated mutation -> independent verification -> valid evidence chain. Deployment/UI/AgentCore work waits until that loop is proven.
+Further build effort is gated on one real Strands model-provider run of the same workflow. Deployment, UI, and AgentCore work wait until an external model can autonomously inspect the demo, identify the policy violation, request the bounded mutation, and verify the result. Until then, the isolated branch remains unmerged and production remains untouched.
