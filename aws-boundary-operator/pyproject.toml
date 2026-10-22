@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "boundary-operator"
+version = "0.1.0"
+description = "A Strands professional agent that investigates routine developer-ops issues and interrupts only at the human decision boundary."
+requires-python = ">=3.10"
+dependencies = ["strands-agents>=1.44.0"]
+
+[project.scripts]
+boundary-operator = "boundary_operator.agent:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
